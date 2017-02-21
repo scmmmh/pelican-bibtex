@@ -45,7 +45,7 @@ def add_publications(generator):
         from pybtex.database.output.bibtex import Writer
         from pybtex.database import BibliographyData, PybtexError
         from pybtex.backends import html
-        from pybtex.style.formatting import plain
+        from pybtex.style.formatting import unsrt
     except ImportError:
         logger.warn('`pelican_bibtex` failed to load dependency `pybtex`')
         return
@@ -62,9 +62,9 @@ def add_publications(generator):
     publications = []
 
     # format entries
-    plain_style = plain.Style()
+    unsrt_style = unsrt.Style()
     html_backend = html.Backend()
-    formatted_entries = plain_style.format_entries(bibdata_all.entries.values())
+    formatted_entries = unsrt_style.format_entries(bibdata_all.entries.values())
 
     for formatted_entry in formatted_entries:
         key = formatted_entry.key
@@ -75,6 +75,8 @@ def add_publications(generator):
         pdf = entry.fields.get('pdf', None)
         slides = entry.fields.get('slides', None)
         poster = entry.fields.get('poster', None)
+        website = entry.fields.get('website', None)
+        type = entry.fields.get('type', 'Publications')
 
         #render the bibtex string for the entry
         bib_buf = StringIO()
@@ -83,12 +85,14 @@ def add_publications(generator):
         text = formatted_entry.text.render(html_backend)
 
         publications.append({'key': key,
+                             'type': type,
                              'year': year,
                              'text': text,
                              'bibtex': bib_buf.getvalue(),
                              'pdf': pdf,
                              'slides': slides,
-                             'poster': poster})
+                             'poster': poster,
+                             'website': website})
 
     generator.context['publications'] = publications
 

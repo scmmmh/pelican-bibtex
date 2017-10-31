@@ -19,6 +19,13 @@ from pelican import signals
 __version__ = '0.2.1'
 
 
+class Publication(object):
+
+    def __init__(self, values):
+        for key, value in values.items():
+            setattr(self, key, value)
+
+
 def add_publications(generator):
     """
     Populates context with a list of BibTeX publications.
@@ -69,14 +76,6 @@ def add_publications(generator):
     for formatted_entry in formatted_entries:
         key = formatted_entry.key
         entry = bibdata_all.entries[key]
-        year = entry.fields.get('year')
-        # This shouldn't really stay in the field dict
-        # but new versions of pybtex don't support pop
-        pdf = entry.fields.get('pdf', None)
-        slides = entry.fields.get('slides', None)
-        poster = entry.fields.get('poster', None)
-        website = entry.fields.get('website', None)
-        type = entry.fields.get('type', 'Publications')
 
         #render the bibtex string for the entry
         bib_buf = StringIO()
@@ -84,15 +83,8 @@ def add_publications(generator):
         Writer().write_stream(bibdata_this, bib_buf)
         text = formatted_entry.text.render(html_backend)
 
-        publications.append({'key': key,
-                             'type': type,
-                             'year': year,
-                             'text': text,
-                             'bibtex': bib_buf.getvalue(),
-                             'pdf': pdf,
-                             'slides': slides,
-                             'poster': poster,
-                             'website': website})
+        entry.fields['rendered'] = text
+        publications.append(entry)
 
     generator.context['publications'] = publications
 

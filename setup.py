@@ -44,5 +44,6 @@ setup(
     author_email='vlad@vene.ro',
     url='https://pypi.python.org/pypi/pelican_bibtex',
     py_modules=['pelican_bibtex'],
-    classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f]
+    classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],
+    install_requires=['pybtex']
 )

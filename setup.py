@@ -38,7 +38,7 @@ setup(
     name='pelican_bibtex',
     description='Organize your scientific publications with BibTeX in Pelican',
     long_description=LONG_DESCRIPTION,
-    version='0.2.1',
+    version='0.3.0',
     author='Vlad Niculae',
     author_email='vlad@vene.ro',
     url='https://pypi.python.org/pypi/pelican_bibtex',

@@ -12,18 +12,11 @@ websites.
 # Unlicense (see UNLICENSE for details)
 
 import logging
-logger = logging.getLogger(__name__)
+import os
 
 from pelican import signals
 
-__version__ = '0.3.0'
-
-
-class Publication(object):
-
-    def __init__(self, values):
-        for key, value in values.items():
-            setattr(self, key, value)
+logger = logging.getLogger(__name__)
 
 
 def add_publications(generator):
@@ -33,13 +26,13 @@ def add_publications(generator):
     Configuration
     -------------
     generator.settings['PUBLICATIONS_SRC']:
-        local path to the BibTeX file to read.
+        list of local paths to the BibTeX files to read.
 
     Output
     ------
     generator.context['publications']:
-        List of tuples (key, year, text, bibtex, pdf, slides, poster).
-        See Readme.md for more details.
+        Dictionary where the keys are the BibTeX filenames
+        and the values list of Pybtex entries
     """
     if 'PUBLICATIONS_SRC' not in generator.settings:
         return
@@ -57,37 +50,38 @@ def add_publications(generator):
         logger.warn('`pelican_bibtex` failed to load dependency `pybtex`')
         return
 
-    refs_file = generator.settings['PUBLICATIONS_SRC']
-    try:
-        bibdata_all = Parser().parse_file(refs_file)
-    except PybtexError as e:
-        logger.warn('`pelican_bibtex` failed to parse file %s: %s' % (
-            refs_file,
-            str(e)))
-        return
+    generator.context['publications'] = {}
 
-    publications = []
+    for refs_file in generator.settings['PUBLICATIONS_SRC']:
+        try:
+            bibdata_all = Parser().parse_file(refs_file)
+        except PybtexError as e:
+            logger.warn('`pelican_bibtex` failed to parse file %s: %s' % (
+                refs_file,
+                str(e)))
+            return
 
-    # format entries
-    unsrt_style = unsrt.Style()
-    html_backend = html.Backend()
-    formatted_entries = unsrt_style.format_entries(bibdata_all.entries.values())
+        publications = []
 
-    for formatted_entry in formatted_entries:
-        key = formatted_entry.key
-        entry = bibdata_all.entries[key]
+        # format entries
+        unsrt_style = unsrt.Style()
+        html_backend = html.Backend()
+        formatted_entries = unsrt_style.format_entries(bibdata_all.entries.values())
 
-        #render the bibtex string for the entry
-        bib_buf = StringIO()
-        bibdata_this = BibliographyData(entries={key: entry})
-        Writer().write_stream(bibdata_this, bib_buf)
-        text = formatted_entry.text.render(html_backend)
+        for formatted_entry in formatted_entries:
+            key = formatted_entry.key
+            entry = bibdata_all.entries[key]
 
-        entry.fields['rendered'] = text
-        publications.append(entry)
+            #render the bibtex string for the entry
+            bib_buf = StringIO()
+            bibdata_this = BibliographyData(entries={key: entry})
+            Writer().write_stream(bibdata_this, bib_buf)
+            text = formatted_entry.text.render(html_backend)
 
-    generator.context['publications'] = publications
+            entry.fields['rendered'] = text
+            publications.append(entry)
 
+        generator.context['publications'][refs_file.replace(os.path.sep, '/').split('/')[-1]] = publications
 
 def register():
     signals.generator_init.connect(add_publications)
